@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, nextTick, watch } from 'vue'
-import Swiper from 'swiper';
+import Swiper from 'swiper/bundle';
 import { nanoid } from 'nanoid'
 // import Swiper styles
-import 'swiper/css';
+import 'swiper/css/bundle';
 
 const page = ref(0)
 const maxCount = ref(50)
@@ -31,14 +31,14 @@ const swiperDom = ref()
 const swiper = ref()
 const slidesPerView = ref(breakpointsMap.lg.slidesPerView)
 const items = ref([])
-
+const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
 function getRandomData() {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       let res: string[]
       switch (true) {
         case page.value < 2: {
-          res = Array.from({ length: 5 }).fill(0).map((_, idx) => nanoid())
+          res = Array.from({ length: 5 }).fill(0).map(() => nanoid())
           break
         }
         case page.value === 2: {
@@ -53,7 +53,7 @@ function getRandomData() {
       }
 
       resolve(res)
-    }, 800)
+    }, 1800)
   })
 }
 
@@ -89,7 +89,10 @@ onMounted(async () => {
           swiper.value = instance
         }
       },
-      loop: true
+      loop: true,
+      pagination: {
+        el: ".swiper-pagination",
+      },
     }
 
     swiper.value = new Swiper(swiperDom.value, swiperParams)
@@ -132,13 +135,16 @@ function prev() {
             {{ idx }}</div>
         </div>
         <template v-if="!isLoaded">
-          <div class="swiper-slide" :key="`g${idx}`" v-for="(idx) in 5">
+          <div class="swiper-slide" :key="id" v-for="(id, idx) in skeletons">
             <div
               class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-red-50">
               骨架屏{{ idx }}</div>
           </div>
         </template>
       </div>
+      <div class="swiper-pagination"></div>
+      <!-- <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div> -->
       <div class="absolute left-0 border border-yellow-400 rounded-full top-1/2 z-10 cursor-pointer" @click="prev">Left
       </div>
       <div class="absolute right-0 border border-yellow-400 rounded-full top-1/2 z-10 cursor-pointer" @click="next">
