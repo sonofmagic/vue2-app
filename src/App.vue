@@ -31,8 +31,11 @@ const swiperDom = ref()
 const swiper = ref()
 const slidesPerView = ref(breakpointsMap.lg.slidesPerView)
 const items = ref([])
-const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
+const isShow = ref(false)
+const isFetching = ref(false)
+// const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
 function getRandomData() {
+  isFetching.value = true
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       let res: string[]
@@ -53,6 +56,7 @@ function getRandomData() {
       }
 
       resolve(res)
+      isFetching.value = false
     }, 1800)
   })
 }
@@ -66,11 +70,17 @@ function getRandomData() {
 // })
 
 onMounted(async () => {
-  const res = await getRandomData()
-  if (res.length < 5) {
-    isLoaded.value = true
-  }
-  items.value = res
+
+  getRandomData().then(res => {
+    if (res.length < 5) {
+      isLoaded.value = true
+    }
+    items.value = res
+    nextTick(() => {
+      swiper.value.update()
+    })
+  })
+
 
   if (swiperDom.value) {
     const swiperParams = {
@@ -96,6 +106,7 @@ onMounted(async () => {
     }
 
     swiper.value = new Swiper(swiperDom.value, swiperParams)
+    isShow.value = true
     nextTick(() => {
       swiper.value.update()
     })
@@ -103,21 +114,26 @@ onMounted(async () => {
 
 
 })
-// const swiper = new Swiper();
-
 
 async function next() {
+  if (isFetching.value) {
+    return
+  }
   swiper.value.slideNext()
   console.log(swiper.value.realIndex, swiper.value.activeIndex)
-  page.value++
-  const res = await getRandomData()
-  if (res.length < 5) {
-    isLoaded.value = true
+
+  if (!isLoaded.value) {
+    page.value++
+    const res = await getRandomData()
+    if (res.length < 5) {
+      isLoaded.value = true
+    }
+    items.value.push(...res)
+    nextTick(() => {
+      swiper.value.update()
+    })
   }
-  items.value.push(...res)
-  nextTick(() => {
-    swiper.value.update()
-  })
+
 }
 
 function prev() {
@@ -127,7 +143,7 @@ function prev() {
 
 <template>
   <div class="container mx-auto pt-6">
-    <div ref="swiperDom" class="swiper">
+    <div v-show="isShow" ref="swiperDom" class="swiper">
       <div class="swiper-wrapper">
         <div class="swiper-slide" :key="item" v-for="(item, idx) in items">
           <div
@@ -135,7 +151,7 @@ function prev() {
             {{ idx }}</div>
         </div>
         <template v-if="!isLoaded">
-          <div class="swiper-slide" :key="id" v-for="(id, idx) in skeletons">
+          <div class="swiper-slide" :key="idx" v-for="(idx) in slidesPerView">
             <div
               class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-red-50">
               骨架屏{{ idx }}</div>
