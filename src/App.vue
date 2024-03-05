@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, nextTick, watch } from 'vue'
+import { onMounted, ref, nextTick, watch, computed } from 'vue'
 import Swiper from 'swiper/bundle';
 import { nanoid } from 'nanoid'
 // import Swiper styles
 import 'swiper/css/bundle';
 
 const page = ref(0)
-const maxCount = ref(50)
+const maxCount = ref(21)
 const isLoaded = ref(false)
 const breakpointsMap = {
   DEFAULT: {
@@ -30,9 +30,13 @@ const breakpointsMap = {
 const swiperDom = ref()
 const swiper = ref()
 const slidesPerView = ref(breakpointsMap.lg.slidesPerView)
-const items = ref([])
+const items = ref<string[]>([])
 const isShow = ref(false)
 const isFetching = ref(false)
+
+const isOverflow = computed(() => {
+  return items.value.length >= maxCount.value
+})
 // const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
 function getRandomData() {
   isFetching.value = true
@@ -40,11 +44,11 @@ function getRandomData() {
     setTimeout(() => {
       let res: string[]
       switch (true) {
-        case page.value < 2: {
+        case page.value < 4: {
           res = Array.from({ length: 5 }).fill(0).map(() => nanoid())
           break
         }
-        case page.value === 2: {
+        case page.value < 5: {
           res = Array.from({ length: Math.floor(Math.random() * 5) }).fill(0).map((_, idx) => nanoid())
           // isLoaded.value = true
           break
@@ -72,10 +76,14 @@ function getRandomData() {
 onMounted(async () => {
 
   getRandomData().then(res => {
-    if (res.length < 5) {
+    if (res.length < slidesPerView.value) {
       isLoaded.value = true
     }
-    items.value = res
+    for (let i = 0; i < res.length; i++) {
+      if (items.value.length <= maxCount.value) {
+        items.value.push(res[i])
+      }
+    }
     nextTick(() => {
       swiper.value.update()
     })
@@ -125,16 +133,30 @@ async function next() {
   if (!isLoaded.value) {
     page.value++
     const res = await getRandomData()
-    if (res.length < 5) {
+    if (res.length < slidesPerView.value) {
       isLoaded.value = true
     }
-    items.value.push(...res)
+    for (let i = 0; i < res.length; i++) {
+      if (items.value.length <= maxCount.value) {
+        items.value.push(res[i])
+      }
+    }
+
+
     nextTick(() => {
       swiper.value.update()
+      // nextTick(() => {
+      //   if (isLoaded.value) {
+      //     swiper.value.slideNext(0)
+      //   }
+      // })
+
     })
   }
 
 }
+
+const isFirstPage = computed(() => swiper.value?.isBeginning)
 
 function prev() {
   swiper.value.slidePrev()
@@ -148,7 +170,7 @@ function prev() {
         <div class="swiper-slide" :key="item" v-for="(item, idx) in items">
           <div
             class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-sky-100">
-            {{ idx }}</div>
+            {{ idx + 1 }}</div>
         </div>
         <template v-if="!isLoaded">
           <div class="swiper-slide" :key="idx" v-for="(idx) in slidesPerView">
@@ -161,7 +183,8 @@ function prev() {
       <div class="swiper-pagination"></div>
       <!-- <div class="swiper-button-prev"></div>
       <div class="swiper-button-next"></div> -->
-      <div class="absolute left-0 border border-yellow-400 rounded-full top-1/2 z-10 cursor-pointer" @click="prev">Left
+      <div v-if="isLoaded || !isFirstPage"
+        class="absolute left-0 border border-yellow-400 rounded-full top-1/2 z-10 cursor-pointer" @click="prev">Left
       </div>
       <div class="absolute right-0 border border-yellow-400 rounded-full top-1/2 z-10 cursor-pointer" @click="next">
         Right
