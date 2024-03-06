@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid'
 import 'swiper/css/bundle';
 
 const page = ref(0)
-const maxCount = ref(21)
+const maxCount = ref(20)
 const isLoaded = ref(false)
 const breakpointsMap = {
   DEFAULT: {
@@ -37,6 +37,12 @@ const isFetching = ref(false)
 const isOverflow = computed(() => {
   return items.value.length >= maxCount.value
 })
+watch(isOverflow, (val) => {
+  console.log(val)
+  nextTick(() => {
+    swiper.value.update()
+  })
+})
 // const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
 function getRandomData() {
   isFetching.value = true
@@ -49,7 +55,10 @@ function getRandomData() {
           break
         }
         case page.value < 5: {
-          res = Array.from({ length: Math.floor(Math.random() * 5) }).fill(0).map((_, idx) => nanoid())
+          const length = 1 // Math.min(Math.floor(Math.random() * 5, 1))
+          // length 为 0 直接跳转到下一页
+          // 
+          res = Array.from({ length }).fill(0).map((_, idx) => nanoid())
           // isLoaded.value = true
           break
         }
@@ -80,7 +89,7 @@ onMounted(async () => {
       isLoaded.value = true
     }
     for (let i = 0; i < res.length; i++) {
-      if (items.value.length <= maxCount.value) {
+      if (items.value.length < maxCount.value) {
         items.value.push(res[i])
       }
     }
@@ -128,16 +137,16 @@ async function next() {
     return
   }
   swiper.value.slideNext()
-  console.log(swiper.value.realIndex, swiper.value.activeIndex)
+  console.log(swiper.value.realIndex, swiper.value.activeIndex, isOverflow.value)
 
-  if (!isLoaded.value) {
+  if (!isLoaded.value && !isOverflow.value) {
     page.value++
     const res = await getRandomData()
     if (res.length < slidesPerView.value) {
       isLoaded.value = true
     }
     for (let i = 0; i < res.length; i++) {
-      if (items.value.length <= maxCount.value) {
+      if (items.value.length < maxCount.value) {
         items.value.push(res[i])
       }
     }
@@ -159,6 +168,9 @@ async function next() {
 const isFirstPage = computed(() => swiper.value?.isBeginning)
 
 function prev() {
+  if (isFetching.value) {
+    return
+  }
   swiper.value.slidePrev()
 }
 </script>
@@ -172,7 +184,7 @@ function prev() {
             class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-sky-100">
             {{ idx + 1 }}</div>
         </div>
-        <template v-if="!isLoaded">
+        <template v-if="!isLoaded && !isOverflow">
           <div class="swiper-slide" :key="idx" v-for="(idx) in slidesPerView">
             <div
               class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-red-50">
