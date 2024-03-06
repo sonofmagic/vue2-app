@@ -2,7 +2,6 @@
 import { onMounted, ref, nextTick, watch, computed } from 'vue'
 import Swiper from 'swiper/bundle';
 import { nanoid } from 'nanoid'
-// import Swiper styles
 import 'swiper/css/bundle';
 
 const page = ref(0)
@@ -70,7 +69,7 @@ function getRandomData() {
 
       resolve(res)
       isFetching.value = false
-    }, 1800)
+    }, 1000)
   })
 }
 
