@@ -33,15 +33,6 @@ const items = ref<string[]>([])
 const isShow = ref(false)
 const isFetching = ref(false)
 
-const isOverflow = computed(() => {
-  return items.value.length >= maxCount.value
-})
-watch(isOverflow, (val) => {
-  console.log(val)
-  nextTick(() => {
-    swiper.value.update()
-  })
-})
 // const skeletons = ref(Array.from({ length: 5 }).fill(0).map(() => nanoid()))
 function getRandomData() {
   isFetching.value = true
@@ -90,6 +81,9 @@ onMounted(async () => {
     for (let i = 0; i < res.length; i++) {
       if (items.value.length < maxCount.value) {
         items.value.push(res[i])
+      } else {
+        isLoaded.value = true
+        break
       }
     }
     nextTick(() => {
@@ -136,9 +130,9 @@ async function next() {
     return
   }
   swiper.value.slideNext()
-  console.log(swiper.value.realIndex, swiper.value.activeIndex, isOverflow.value)
+  console.log(swiper.value.realIndex, swiper.value.activeIndex)
 
-  if (!isLoaded.value && !isOverflow.value) {
+  if (!isLoaded.value) {
     page.value++
     const res = await getRandomData()
     if (res.length < slidesPerView.value) {
@@ -147,6 +141,9 @@ async function next() {
     for (let i = 0; i < res.length; i++) {
       if (items.value.length < maxCount.value) {
         items.value.push(res[i])
+      } else {
+        isLoaded.value = true
+        break
       }
     }
 
@@ -182,7 +179,7 @@ function prev() {
         <div class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-sky-100">
           {{ idx + 1 }}</div>
       </div>
-      <template v-if="!isLoaded && !isOverflow">
+      <template v-if="!isLoaded">
         <div class="swiper-slide" :key="idx" v-for="(idx) in slidesPerView">
           <div class="w-[300px] h-[300px] border border-gray-400 rounded-lg flex items-center justify-center bg-red-50">
             骨架屏{{ idx }}</div>
