@@ -6,9 +6,9 @@ import { useElementBounding } from '@vueuse/core'
 
 const coms = ['textarea', 'div', 'span', 'a', CalendarRange]
 // const { x, y, top, right, bottom, left, width, height } = useElementBounding(el)
-const els = ref([])
+const els = ref(Array.from({ length: coms.length }).map(_ => ref()))
 
-const res = useElementBounding(els[0])
+const res = useElementBounding(els.value[0])
 console.log(res)
 // onMounted(() => {
 //   const res = useElementBounding(els[0])
@@ -22,7 +22,7 @@ console.log(res)
       <Swiper></Swiper>
     </div>
 
-    <component :key="idx" :is="com" v-for="(com, idx) in coms" ref="els">
+    <component :key="idx" :is="com" v-for="(com, idx) in coms" :ref="el=> els[idx].value = el">
       <template v-if="typeof com === 'string'"> {{ com }}{{ res }}</template>
     </component>
 
