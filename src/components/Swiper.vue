@@ -94,7 +94,7 @@ onMounted(async () => {
 
   if (swiperDom.value) {
     const swiperParams = {
-      ...breakpointsMap,
+      ...breakpointsMap.DEFAULT,
       breakpoints: {
         840: breakpointsMap.sm,
         1128: breakpointsMap.md,
